@@ -26,6 +26,17 @@ public class PlayerControls : MonoBehaviour {
 	public GameObject arena4;
 	
 	[RPC] void SentJoystick(int player, float vertical, float horizontal, string side){
+		if(is_gameOn || MenuManager.is_choosingArena){
+			if(side == "left" && playerObjects[player] != null){
+				playerObjects[player].GetComponent<Sumo>().movement = new Vector2(horizontal, vertical);
+				if(MenuManager.is_choosingArena){
+					playerObjects[player].GetComponent<Sumo>().facing = new Vector2(horizontal, vertical);
+				}
+			}
+			if(side == "right" && playerObjects[player] != null){
+				playerObjects[player].GetComponent<Sumo>().facing = new Vector2(horizontal, vertical);
+			}
+		}
 	}
 	
 	[RPC] void SentDPad(int player, float vertical, float horizontal, string side){
@@ -35,6 +46,37 @@ public class PlayerControls : MonoBehaviour {
 	}
 	
 	[RPC] void SentButton1(int player, string buttonPress, string side){
+		if(MenuManager.is_choosingArena){
+			Destroy (GameObject.Find("ChooseArena(Clone)"));
+			string selectedArena = playerObjects[player].GetComponent<Sumo>().selectedArena;
+			if(selectedArena == ""){
+				selectedArena = "Arena" + Mathf.RoundToInt(Random.value * 4 + 1).ToString();
+			}
+			else{
+				selectedArena = playerObjects[player].GetComponent<Sumo>().selectedArena;
+			}
+			switch(selectedArena){
+			case "Arena1":
+				chosenArena = (GameObject) GameObject.Instantiate(arena1, Vector3.zero, Quaternion.identity);
+				break;
+			case "Arena2":
+				chosenArena = (GameObject) GameObject.Instantiate(arena2, Vector3.zero, Quaternion.identity);
+				break;
+			case "Arena3":
+				chosenArena = (GameObject) GameObject.Instantiate(arena3, Vector3.zero, Quaternion.identity);
+				break;
+			case "Arena4":
+				chosenArena = (GameObject) GameObject.Instantiate(arena4, Vector3.zero, Quaternion.identity);
+				break;
+			default:
+				chosenArena = (GameObject) GameObject.Instantiate(arena1, Vector3.zero, Quaternion.identity);
+				break;
+			}
+			MenuManager.is_choosingArena = false;
+			MenuManager.lastTickTime = Time.time;
+			MenuManager.is_countdown = true;
+			transform.GetComponent<NetworkManager>().StartRound();
+		}
 	}
 	
 	[RPC] void SentButton2(int player, string buttonPress, string side){
@@ -49,10 +91,10 @@ public class PlayerControls : MonoBehaviour {
 	[RPC] public void InstantiatePlayerObject(int player, float primaryR, float primaryG, float primaryB, float secondaryR, float secondaryG, float secondaryB, string playerName){
 		Color primary = new Color(primaryR, primaryG, primaryB, 1);
 		Color secondary = new Color(secondaryR, secondaryG, secondaryB, 1);
-		if(playerObjects[player] != null){
-			//playerObjects[player].GetComponent<Sumo>().SetMyPlayer(player, primary, secondary, playerName);
+		if(playerObjects.Length > player){
+			playerObjects[player].GetComponent<Sumo>().SetMyPlayer(player, primary, secondary, playerName);
 		}
-		//statusObjects[player].GetComponent<Status>().SetMyPlayer(player, primary, secondary, playerName);
+		statusObjects[player].GetComponent<Status>().SetMyPlayer(player, primary, secondary, playerName);
 	}
 	
 	
